@@ -71,23 +71,40 @@ jobs:
         path: dist/${{ matrix.executable }}
 
   release:
-    name: Release
+    name: Auto Release
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: startsWith(github.ref, 'refs/tags/') # รันเมื่อ push tag
+    permissions:
+      contents: write
     
     steps:
+    - name: Debug info
+      run: |
+        echo "Repository: ${{ github.repository }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Tag: ${{ github.ref_name }}"
+    
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
     
-    - name: Upload release assets
+    - name: List artifacts
+      run: |
+        echo "Downloaded artifacts:"
+        find artifacts -type f -ls
+    
+    - name: Create Release and Upload Assets
       uses: softprops/action-gh-release@v1
       with:
         files: |
           artifacts/side-project-linux/side-project
           artifacts/side-project-windows.exe/side-project.exe
           artifacts/side-project-macos/side-project
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        name: "Release ${{ github.ref_name }}"
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # ใช้ automatic token
