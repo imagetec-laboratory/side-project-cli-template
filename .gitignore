@@ -8,3 +8,20 @@ wheels/
 
 # Virtual environments
 .venv
+
+# PyInstaller specific files
+*.spec
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
