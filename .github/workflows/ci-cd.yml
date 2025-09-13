@@ -1,0 +1,93 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  build:
+    name: Build & Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            executable: side-project
+            asset_name: side-project-linux
+          - os: windows-latest
+            executable: side-project.exe
+            asset_name: side-project-windows.exe
+          - os: macos-latest
+            executable: side-project
+            asset_name: side-project-macos
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        pip install -e .
+    
+    - name: Test CLI
+      run: |
+        side-project --help
+        side-project hello "CI/CD"
+        side-project version
+        side-project info
+    
+    - name: Build executable (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        pyinstaller side-project.spec
+        
+    - name: Build executable (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        chmod +x build.sh
+        ./build.sh
+    
+    - name: Test executable
+      run: |
+        ./dist/${{ matrix.executable }} --help
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.asset_name }}
+        path: dist/${{ matrix.executable }}
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/side-project-linux/side-project
+          artifacts/side-project-windows.exe/side-project.exe
+          artifacts/side-project-macos/side-project
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
