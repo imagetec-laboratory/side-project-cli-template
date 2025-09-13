@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # PyInstaller specific files
-*.spec
+# *.spec
 
 # IDE files
 .vscode/
