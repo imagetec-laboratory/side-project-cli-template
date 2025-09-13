@@ -16,6 +16,10 @@ a = Analysis(
         'rich.progress',
         'click',
         'shellingham',
+        # Add our own modules
+        'side_project.commands',
+        'side_project.utils',
+        'side_project.config',
     ],
     hookspath=[],
     hooksconfig={},
