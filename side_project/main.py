@@ -1,44 +1,49 @@
+"""
+Side Project CLI Template
+
+A simple CLI template using Typer and Rich.
+Customize this template by:
+1. Change project info in config.py
+2. Add your commands in commands.py  
+3. Add utility functions in utils.py
+"""
+
 import typer
-from rich.console import Console
-from rich.table import Table
-from typing import Optional
+import sys
 
-# Create main CLI app
-app = typer.Typer(help="Side Project CLI - A powerful command-line tool")
-console = Console()
+# Import handling for both development and PyInstaller
+try:
+    # Try relative imports first (development)
+    from .config import PROJECT_INFO
+    from .commands import hello_command, info_command, version_command
+except ImportError:
+    # Fallback for PyInstaller executable
+    import side_project.config as config
+    import side_project.commands as commands
+    PROJECT_INFO = config.PROJECT_INFO
+    hello_command = commands.hello_command
+    info_command = commands.info_command
+    version_command = commands.version_command
 
-@app.command()
-def hello(
-    name: str = typer.Argument(..., help="Your name"),
-    greeting: Optional[str] = typer.Option("Hello", "--greeting", "-g", help="Greeting message"),
-    count: int = typer.Option(1, "--count", "-c", help="Number of times to greet")
-):
-    """Say hello to someone with a custom greeting."""
-    for _ in range(count):
-        console.print(f"[bold green]{greeting}[/bold green] [blue]{name}[/blue]! 🎉")
+# Create CLI app
+app = typer.Typer(
+    name=PROJECT_INFO["name"].lower().replace(" ", "-"),
+    help=f"{PROJECT_INFO['name']} - {PROJECT_INFO['description']}"
+)
 
-@app.command()
-def info():
-    """Show project information."""
-    table = Table(title="Project Information")
-    table.add_column("Field", style="cyan", no_wrap=True)
-    table.add_column("Value", style="magenta")
-    
-    table.add_row("Project Name", "Side Project")
-    table.add_row("Version", "0.1.0")
-    table.add_row("Description", "A powerful CLI tool")
-    table.add_row("Python", ">=3.12.9")
-    
-    console.print(table)
+# Register commands
+app.command(name="hello")(hello_command)
+app.command(name="info")(info_command) 
+app.command(name="version")(version_command)
 
-@app.command()
-def version():
-    """Show version information."""
-    console.print("Side Project CLI [bold]v0.1.0[/bold]")
+# TODO: Add your own commands here
+# app.command(name="your-command")(your_command_function)
+
 
 def main():
-    """Entry point for the CLI application."""
+    """Main entry point"""
     app()
+
 
 if __name__ == "__main__":
     main()
