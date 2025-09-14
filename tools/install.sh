@@ -2,7 +2,8 @@
 set -e
 
 REPO="imagetec-laboratory/side-project-cli-template"
-BINARY_NAME="side-project-cli"
+# เปลี่ยนจาก side-project-cli เป็น side-project
+BINARY_NAME="side-project"
 BASE_URL="https://github.com/$REPO/releases/latest/download"
 
 # Colors for output
@@ -26,29 +27,18 @@ ARCH=$(uname -m)
 
 echo -e "${BLUE}🔍 Detected OS: $OS, Architecture: $ARCH${NC}"
 
-# Determine filename based on OS
+# Determine filename based on OS - ใช้ชื่อไฟล์จริงใน release
 case "$OS" in
-    linux)
-        case "$ARCH" in
-            x86_64) FILENAME="${BINARY_NAME}-linux-x64" ;;
-            aarch64|arm64) FILENAME="${BINARY_NAME}-linux-arm64" ;;
-            *) FILENAME="${BINARY_NAME}" ;; # fallback to generic binary
-        esac
-        ;;
-    darwin)
-        case "$ARCH" in
-            x86_64) FILENAME="${BINARY_NAME}-macos-x64" ;;
-            arm64) FILENAME="${BINARY_NAME}-macos-arm64" ;;
-            *) FILENAME="${BINARY_NAME}" ;; # fallback to generic binary
-        esac
+    linux|darwin)
+        FILENAME="side-project"
         ;;
     mingw*|cygwin*|msys*)
-        FILENAME="${BINARY_NAME}.exe"
+        FILENAME="side-project.exe"
         ;;
     *)
         echo -e "${YELLOW}⚠️  Unsupported OS: $OS${NC}"
         echo -e "${BLUE}Trying generic binary...${NC}"
-        FILENAME="${BINARY_NAME}"
+        FILENAME="side-project"
         ;;
 esac
 
@@ -68,19 +58,12 @@ fi
 
 echo -e "${GREEN}📦 Latest version: $VERSION${NC}"
 
-# Try to get specific download URL, fallback to generic
+# Download URL
 DOWNLOAD_URL="$BASE_URL/$FILENAME"
 
 # Download the binary
 echo -e "${BLUE}📥 Downloading $FILENAME...${NC}"
 echo -e "${BLUE}🔗 URL: $DOWNLOAD_URL${NC}"
-
-# Check if file exists (do a HEAD request)
-if ! curl -s --head "$DOWNLOAD_URL" | head -n 1 | grep -q "200 OK"; then
-    echo -e "${YELLOW}⚠️  Specific binary not found, trying generic name...${NC}"
-    FILENAME="${BINARY_NAME}"
-    DOWNLOAD_URL="$BASE_URL/$FILENAME"
-fi
 
 # Download
 curl -L "$DOWNLOAD_URL" -o "$BINARY_NAME" || {
@@ -89,6 +72,14 @@ curl -L "$DOWNLOAD_URL" -o "$BINARY_NAME" || {
     exit 1
 }
 
+# Verify file size (should be > 1MB for a real binary)
+FILE_SIZE=$(stat -f%z "$BINARY_NAME" 2>/dev/null || stat -c%s "$BINARY_NAME" 2>/dev/null || echo "0")
+if [ "$FILE_SIZE" -lt 1000000 ]; then
+    echo -e "${RED}❌ Downloaded file seems too small ($FILE_SIZE bytes). Something went wrong.${NC}"
+    rm -f "$BINARY_NAME"
+    exit 1
+fi
+
 # Make executable (Unix systems)
 if [ "$OS" != "mingw"* ] && [ "$OS" != "cygwin"* ] && [ "$OS" != "msys"* ]; then
     chmod +x "$BINARY_NAME"
@@ -96,7 +87,7 @@ fi
 
 # Success message
 echo -e "${GREEN}✅ Installation complete!${NC}"
-echo -e "${GREEN}📁 Binary saved as: ./$BINARY_NAME${NC}"
+echo -e "${GREEN}📁 Binary saved as: ./$BINARY_NAME (${FILE_SIZE} bytes)${NC}"
 echo -e "${YELLOW}🎉 Run with: ./$BINARY_NAME${NC}"
 
 # Optional: show version if binary supports it
