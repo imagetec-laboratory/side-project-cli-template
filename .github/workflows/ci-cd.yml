@@ -3,6 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   release:
@@ -20,13 +21,13 @@ jobs:
         include:
           - os: ubuntu-latest
             executable: side-project
-            asset_name: side-project-linux
+            asset_name: side-project-linux-x64
           - os: windows-latest
             executable: side-project.exe
-            asset_name: side-project-windows.exe
+            asset_name: side-project-windows-x64.exe
           - os: macos-latest
             executable: side-project
-            asset_name: side-project-macos
+            asset_name: side-project-macos-arm64
     
     runs-on: ${{ matrix.os }}
     
@@ -95,13 +96,21 @@ jobs:
         echo "Downloaded artifacts:"
         find artifacts -type f -ls
     
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        cp artifacts/side-project-linux-x64/side-project release-assets/side-project-linux-x64
+        cp artifacts/side-project-windows-x64.exe/side-project.exe release-assets/side-project-windows-x64.exe
+        cp artifacts/side-project-macos-arm64/side-project release-assets/side-project-macos-arm64
+        ls -la release-assets/
+    
     - name: Create Release and Upload Assets
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          artifacts/side-project-linux/side-project
-          artifacts/side-project-windows.exe/side-project.exe
-          artifacts/side-project-macos/side-project
+          release-assets/side-project-linux-x64
+          release-assets/side-project-windows-x64.exe
+          release-assets/side-project-macos-arm64
         draft: false
         prerelease: false
         generate_release_notes: true

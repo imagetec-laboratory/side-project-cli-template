@@ -27,18 +27,52 @@ ARCH=$(uname -m)
 
 echo -e "${BLUE}🔍 Detected OS: $OS, Architecture: $ARCH${NC}"
 
-# Determine filename based on OS - ใช้ชื่อไฟล์จริงใน release
+# Determine filename based on OS and Architecture
 case "$OS" in
-    linux|darwin)
-        FILENAME="side-project"
+    linux)
+        case "$ARCH" in
+            x86_64|amd64)
+                FILENAME="side-project-linux-x64"
+                ;;
+            *)
+                echo -e "${YELLOW}⚠️  Unsupported architecture: $ARCH for Linux${NC}"
+                echo -e "${BLUE}Trying Linux x64 binary...${NC}"
+                FILENAME="side-project-linux-x64"
+                ;;
+        esac
+        ;;
+    darwin)
+        case "$ARCH" in
+            arm64)
+                FILENAME="side-project-macos-arm64"
+                ;;
+            x86_64|amd64)
+                echo -e "${YELLOW}⚠️  Intel Mac detected, trying ARM64 binary (should work with Rosetta)...${NC}"
+                FILENAME="side-project-macos-arm64"
+                ;;
+            *)
+                echo -e "${YELLOW}⚠️  Unsupported architecture: $ARCH for macOS${NC}"
+                echo -e "${BLUE}Trying macOS ARM64 binary...${NC}"
+                FILENAME="side-project-macos-arm64"
+                ;;
+        esac
         ;;
     mingw*|cygwin*|msys*)
-        FILENAME="side-project.exe"
+        case "$ARCH" in
+            x86_64|amd64)
+                FILENAME="side-project-windows-x64.exe"
+                ;;
+            *)
+                echo -e "${YELLOW}⚠️  Unsupported architecture: $ARCH for Windows${NC}"
+                echo -e "${BLUE}Trying Windows x64 binary...${NC}"
+                FILENAME="side-project-windows-x64.exe"
+                ;;
+        esac
         ;;
     *)
         echo -e "${YELLOW}⚠️  Unsupported OS: $OS${NC}"
-        echo -e "${BLUE}Trying generic binary...${NC}"
-        FILENAME="side-project"
+        echo -e "${BLUE}Trying Linux x64 binary...${NC}"
+        FILENAME="side-project-linux-x64"
         ;;
 esac
 
